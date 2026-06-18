@@ -1,15 +1,190 @@
-DOMAIN-SUFFIX,chatgpt.com,AI
-DOMAIN-SUFFIX,openai.com,AI
-DOMAIN-SUFFIX,oaistatic.com,AI
-DOMAIN-SUFFIX,oaiusercontent.com,AI
-DOMAIN-SUFFIX,auth0.com,AI
+# Shadowrocket 安全精简分流配置
 
-DOMAIN-SUFFIX,gateway.icloud.com,AI
-DOMAIN-SUFFIX,apple-relay.apple.com,AI
-DOMAIN-SUFFIX,apple-relay.fastly-edge.com,AI
-DOMAIN-SUFFIX,apple-relay.cloudflare.com,AI
-DOMAIN-SUFFIX,guzzoni.apple.com,AI
-DOMAIN-SUFFIX,cp4.cloudflare.com,AI
-DOMAIN-SUFFIX,gspe1-ssl.ls.apple.com,AI
+#
+
+# 目标：
+
+# 1. ChatGPT / OpenAI 走代理
+
+# 2. Apple Intelligence / Siri 调用 ChatGPT 所需核心流量走代理
+
+# 3. 其他所有流量默认直连
+
+#
+
+# 安全设计：
+
+# - 无远程 RULE-SET
+
+# - 无 SCRIPT
+
+# - 无 URL Rewrite
+
+# - 无 MITM / HTTPS 解密
+
+# - 无 CA 证书
+
+# - 无节点或订阅信息
+
+# - 无第三方 DNS 强制覆写
+
+#
+
+# 使用要求：
+
+# - Shadowrocket 首页“全局路由”选择“配置”
+
+# - 首页选择一个可正常使用 ChatGPT 的节点
+
+# - 不要开启 HTTPS 解密
+
+# - 不要安装或信任 Shadowrocket CA 证书
+
+[General]
+
+# Apple Intelligence 和 Siri 属于系统级服务。
+
+# 设为 false，避免相关请求绕过 Shadowrocket 规则。
+
+bypass-system = false
+
+# 局域网、设备本机地址和 Wi-Fi 登录认证页不进入代理处理。
+
+skip-proxy = 192.168.0.0/16,10.0.0.0/8,172.16.0.0/12,localhost,*.local,captive.apple.com
+
+# 私有地址、回环地址、链路本地地址和组播地址绕过 TUN。
+
+tun-excluded-routes = 10.0.0.0/8,100.64.0.0/10,127.0.0.0/8,169.254.0.0/16,172.16.0.0/12,192.168.0.0/16,224.0.0.0/4,255.255.255.255/32
+
+# 支持 IPv6，但优先使用兼容性更好的 IPv4。
+
+ipv6 = true
+prefer-ipv6 = false
+
+# 直连流量使用系统 DNS。
+
+dns-direct-system = true
+
+# 直连域名解析失败时禁止自动改走代理。
+
+# 避免无关流量因为 DNS 故障意外进入代理节点。
+
+dns-direct-fallback-proxy = false
+
+# 允许局域网设备返回私有 IP。
+
+private-ip-answer = true
+
+# 自动响应 ping。
+
+icmp-auto-reply = true
+
+# 只屏蔽代理连接的 QUIC/UDP 443，使其回退到 TCP。
+
+# 直连流量不受影响。
+
+block-quic = all-proxy
+
+# 节点不支持 UDP 时直接拒绝。
+
+# 禁止代理规则命中的 UDP 流量自动改为直连。
+
+udp-policy-not-supported-behaviour = REJECT
+
+[Proxy]
+
+# 留空。
+
+# 节点和订阅请只在 Shadowrocket 首页添加，
+
+# 不要将订阅地址、密码或私钥写入 GitHub 配置文件。
+
+[Rule]
+
+# ==================================================
+
+# ChatGPT / OpenAI 核心域名
+
+# ==================================================
+
+# ChatGPT 网页、App、登录、API 和 OpenAI 服务
+
+DOMAIN-SUFFIX,chatgpt.com,PROXY
+DOMAIN-SUFFIX,openai.com,PROXY
+
+# ChatGPT 静态资源
+
+DOMAIN-SUFFIX,oaistatic.com,PROXY
+
+# 图片、上传文件和生成内容
+
+DOMAIN-SUFFIX,oaiusercontent.com,PROXY
+
+# ChatGPT 功能配置和状态下发
+
+DOMAIN-SUFFIX,oaistatsig.com,PROXY
+
+# OpenAI 合并资源 CDN
+
+DOMAIN-SUFFIX,openaimerge.com,PROXY
+
+# ==================================================
+
+# ChatGPT 登录及验证所需精确域名
+
+# 只匹配具体主机，不代理整个第三方域名
+
+# ==================================================
+
+DOMAIN,cdn.workos.com,PROXY
+DOMAIN,forwarder.workos.com,PROXY
+DOMAIN,setup.workos.com,PROXY
+DOMAIN,images.workoscdn.com,PROXY
+DOMAIN,workos.imgix.net,PROXY
+DOMAIN,challenges.cloudflare.com,PROXY
+
+# ==================================================
+
+# Apple Intelligence / Siri 官方核心域名
+
+# ==================================================
+
+# Siri 和听写请求
+
+DOMAIN,guzzoni.apple.com,PROXY
+
+# Siri、Spotlight、查询、Safari 和 Apple App 搜索服务
+
+DOMAIN-SUFFIX,smoot.apple.com,PROXY
+
+# Apple Private Cloud Compute
+
+DOMAIN,apple-relay.cloudflare.com,PROXY
+DOMAIN,apple-relay.fastly-edge.com,PROXY
+DOMAIN,cp4.cloudflare.com,PROXY
+
+# Apple Intelligence 扩展，包括连接外部模型
+
+DOMAIN,apple-relay.apple.com,PROXY
+
+# ==================================================
+
+# Apple Intelligence 设置状态兼容
+
+# ==================================================
+
+# 仅匹配设置初始化和状态刷新域名。
+
+# 不匹配整个 icloud.com，避免照片、备份和云盘走代理。
+
+DOMAIN,setup.icloud.com,PROXY
+
+# ==================================================
+
+# 最终兜底
+
+# ==================================================
+
+# 未明确列出的所有流量一律直连。
 
 FINAL,DIRECT
